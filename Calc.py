@@ -2,7 +2,6 @@ from sympy import *
 
 init_printing()
 
-textplot = "BUNA SIUA!"
 Functia = input("Functia: ")
 Legatura = input("Legatura: ")
 DifDe0 = input("Diferite De 0? ")
@@ -27,21 +26,32 @@ Ec3 = Eq(f_z, 0)
 
 FilteredPctStat = []
 if not DifDe0:
-    PctStat = solve((Ec1, Ec2), (x, y))
-    
+    if f_z != 0:
+        PrintDerivat("z", f_z)
+        PctStat = solve((Ec1, Ec2, Ec3), (x, y, z))      
+        for i in range(len(PctStat)):
+            FilteredPctStat.append((PctStat[x], PctStat[y], PctStat[z]))  
+    else:
+        PctStat = solve((Ec1, Ec2), (x, y))
+        for i in range(len(PctStat)):
+            FilteredPctStat.append((PctStat[x], PctStat[y]))
 else:
-    PctStat = [sol for sol in solve((Ec1, Ec2), (x, y)) if sol[0] != 0 and sol[1] != 0]
-    for sol in PctStat:
-        if all(val.is_rational or val.evalf().is_real for val in sol):
-            FilteredPctStat.append(sol)
+    if f_z != 0:
+        PctStat = [sol for sol in solve((Ec1, Ec2, Ec3), (x, y, z)) if sol[0] != 0 and sol[1] != 0 and sol[2] != 0]
+        for sol in PctStat:
+            if all(val.is_rational or val.evalf().is_real for val in sol):
+                FilteredPctStat.append(sol)
+    else:
+        PctStat = [sol for sol in solve((Ec1, Ec2), (x, y)) if sol[0] != 0 and sol[1] != 0]
+        for sol in PctStat:
+            if all(val.is_rational or val.evalf().is_real for val in sol):
+                FilteredPctStat.append(sol)
 
 
 PctStat = FilteredPctStat
 
 print("Puncte Stationare:", end= " ")
 pprint(PctStat)
-
-pprint(diff(Functia, x, x))
 
 f_xx = diff(f_x, x)
 f_yy = diff(f_y, y)
@@ -56,11 +66,17 @@ PrintDerivat("xy", f_xy)
 if not Legatura:
     Hessiana = Matrix([[f_xx, f_xy], [f_xy, f_yy]])
     #print(Hessiana)
-    print(Hessiana.subs(PctStat)) #Inlocuieste x si y cu punctele stationare
+    #print(Hessiana.subs(PctStat)) #Inlocuieste x si y cu punctele stationare
 
     for i in range(len(PctStat)):
-        H1 = f_xx.subs({x: PctStat[i][0]})
+        H1 = f_xx.subs({x: PctStat[i][0], y: PctStat[i][1]})
+
         if f_z != 0: #Daca avem Z
+            PrintDerivat("zz", f_zz)
+            PrintDerivat("zx", f_zx)
+            PrintDerivat("zy", f_yz)
+
+            H1 = f_xx.subs({x: PctStat[i][0], y: PctStat[i][1], z: PctStat[i][2]})
             H2 = Matrix([[Hessiana[0, 0], Hessiana[0, 1]], [Hessiana[1, 0], Hessiana[1, 1]]]).subs({x: PctStat[i][0], y: PctStat[i][1], z: PctStat[i][2]}).det()
             H3 = Hessiana.subs({x: PctStat[i][0], y: PctStat[i][1], z: PctStat[i][2]}).det()
             print("H3=", end=" ")
@@ -71,21 +87,20 @@ if not Legatura:
                 PctMaxim = PctStat[i]
         else:
             H2 = Matrix([[Hessiana[0, 0], Hessiana[0, 1]], [Hessiana[1, 0], Hessiana[1, 1]]]).subs({x: PctStat[i][0], y: PctStat[i][1]}).det()           
-            if H1 > 0 and H2 > 0:
+            if H1.is_positive and H2.is_positive:
                 PctMinim = PctStat[i]
-            elif H1 < 0 and H2 > 0:
+            elif H1.is_negative and H2.is_positive:
                 PctMaxim = PctStat[i]
 
-        print("H1=", end=" ")
+        print("H1 =", end=" ")
         pprint(H1)
-        print("H2=", end=" ")
+        print("H2 =", end=" ")
         pprint(H2)
 
     if PctMinim:
         print("Punct de Minim:", end=" ")
         pprint(PctMinim)
         print("fmin =", end=" ")
-        pprint(solve(Functia, PctMinim))
         if f_z != 0: #Daca avem Z
             pprint(Functia.subs({x: PctMinim[0], y: PctMinim[1], z: PctMinim[2]}))
         else:
